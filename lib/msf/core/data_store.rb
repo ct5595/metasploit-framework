@@ -43,14 +43,23 @@ class DataStore < Hash
       end
     end
 
-    super(k,v)
+    if v.is_a? Hash
+      v.each { |key, value| self[key] = value }
+    else
+      super(k,v)
+    end
   end
 
   #
   # Case-insensitive wrapper around hash lookup
   #
   def [](k)
-    super(find_key_case(k))
+    k = find_key_case(k)
+    if options[k].respond_to? :calculate_value
+      options[k].calculate_value(self)
+    else
+      super(k)
+    end
   end
 
   #
@@ -319,7 +328,7 @@ class DataStore < Hash
 
     # Scan each key looking for a match
     self.each_key do |rk|
-      if rk.downcase == search_k
+      if rk.casecmp(search_k) == 0
         return rk
       end
     end

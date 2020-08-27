@@ -210,7 +210,7 @@ protected
       rescue ::Exception => e
         # We just wanna show and log the error, not trying to swallow it.
         print_error("#{e.class} #{e.message}")
-        elog("#{e.class} #{e.message}\n#{e.backtrace * "\n"}")
+        elog('Could not allocate a new Session.', error: e)
         raise e
       end
 
@@ -220,6 +220,11 @@ protected
       # Associate this system with the original exploit
       # and any relevant information
       s.set_from_exploit(assoc_exploit)
+
+      # set injected workspace value if db is active
+      if framework.db.active && wspace = framework.db.find_workspace(s.workspace)
+        framework.db.workspace = wspace
+      end
 
       # Pass along any associated payload uuid if specified
       if opts[:payload_uuid]
